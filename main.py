@@ -120,8 +120,6 @@ def main():
                 _write_all(f, data)
             os.chmod(tmp, 0o644)
             os.replace(tmp, final)
-            os.chmod(final, 0o644)
-            return
         except OSError:
             try:
                 if os.path.exists(tmp):
@@ -130,6 +128,17 @@ def main():
                 pass
             if attempt == 2:
                 raise
+        else:
+            # The entry is already in place with mode 0644 (set on the
+            # temp file before the atomic replace), so a failure of this
+            # second chmod must not trigger a rewrite loop or a
+            # non-zero exit when the entry itself is already valid.
+            # Best-effort only.
+            try:
+                os.chmod(final, 0o644)
+            except OSError:
+                pass
+            return
 
 
 if __name__ == "__main__":
